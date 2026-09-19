@@ -1,0 +1,192 @@
+# =============================================================================
+# Satellite — iTerm2 colour scheme map
+# =============================================================================
+#
+# iTerm2 schemes are `.itermcolors` files: an Apple property list holding the
+# sixteen ANSI colours plus a dozen chrome slots. Unlike the Slack export this
+# is close to a direct port, because the VS Code themes already carry a full,
+# verified ANSI ramp — `src/a11y.yml` has held every one of those sixteen to a
+# contrast floor against the terminal ground since the 2019 audit found ANSI
+# black printing at 1.08:1.
+#
+# So the work here is not choosing colours. It is mapping the chrome slots
+# iTerm has and VS Code does not — cursor text, selection, badges, the guide —
+# and re-measuring the result, because iTerm composites and layers differently
+# from the integrated terminal.
+#
+# All five palettes export. A terminal scheme is self-contained: it sets its
+# own ground, so unlike a Slack sidebar it cannot end up paired with a surface
+# it was not graded against, and the light and high-contrast variants are as
+# valid here as the dark ones.
+#
+# -----------------------------------------------------------------------------
+# COLOUR SPACE
+# -----------------------------------------------------------------------------
+# Components are written in sRGB, declared per colour. iTerm also accepts
+# "Calibrated", which is what older schemes in the wild use, and the same
+# numbers in that space render measurably differently — a scheme graded to AA
+# in sRGB and then read back as Calibrated is no longer the scheme that was
+# verified. The palettes are gamut-mapped into sRGB by scripts/color.js, so
+# sRGB is the space they are already in.
+# -----------------------------------------------------------------------------
+
+space: sRGB
+
+# -----------------------------------------------------------------------------
+# The ANSI cube
+#
+# Straight from the palette's own `ansi` block — the same values ui.yml gives
+# to terminal.ansi*, so the integrated terminal and iTerm print identically.
+# -----------------------------------------------------------------------------
+ansi:
+  - ansi.black
+  - ansi.red
+  - ansi.green
+  - ansi.yellow
+  - ansi.blue
+  - ansi.magenta
+  - ansi.cyan
+  - ansi.white
+  - ansi.brightBlack
+  - ansi.brightRed
+  - ansi.brightGreen
+  - ansi.brightYellow
+  - ansi.brightBlue
+  - ansi.brightMagenta
+  - ansi.brightCyan
+  - ansi.brightWhite
+
+# -----------------------------------------------------------------------------
+# Chrome
+#
+# Keys are iTerm2's own, spelled as they appear in the plist. Values are token
+# expressions resolved against the palette, so literal hex is rejected here as
+# it is everywhere outside a tokens file. `alpha(token, HH)` is legal — iTerm
+# stores a real alpha component per colour and composites it over the ground,
+# which is how the selection wash and the cursor guide are meant to work.
+# -----------------------------------------------------------------------------
+chrome:
+  Background Color: surface.deep
+  Foreground Color: text.default
+
+  # Bold text, and the one slot where the obvious value is wrong.
+  #
+  # The tempting choice is ansi.brightWhite, which lifts bold slightly on a
+  # dark ground. On Daybreak that same token is the pale corner of the cube —
+  # bold would render *lighter* than body text and lose its emphasis entirely.
+  # Bold is carried by weight; giving it the body colour is what keeps it
+  # meaning the same thing on all five palettes.
+  Bold Color: text.default
+
+  # A block cursor inverts whatever is under it, so its text has to be dark on
+  # a bright fill. text.onFill exists for exactly this; see tokens.yml.
+  Cursor Color: accent.base
+  Cursor Text Color: text.onFill
+
+  # The optional row/column guide. Matches terminal.hoverHighlightBackground in
+  # ui.yml, so the integrated terminal and iTerm highlight at the same weight.
+  Cursor Guide Color: alpha(accent.base, 26)
+
+  # Selection is translucent, as it is in the editor, so the text under it
+  # stays legible rather than being replaced by a solid band. The contract
+  # measures the selected text over the composited result, not over the wash.
+  Selection Color: wash.selection
+  Selected Text Color: text.default
+
+  Link Color: accent.base
+  Underline Color: accent.base
+
+  # Badges are an opt-in overlay drawn across the session — a hostname, a git
+  # branch — in glyphs, not a filled block.
+  #
+  # iTerm's own badge is translucent, and the first draft here followed it at
+  # 60% alpha. That measured between 2.4:1 and 4.5:1 depending on the palette,
+  # which is the kind of number this theme exists to not ship: the alpha is
+  # doing nothing but making a label harder to read, since the glyphs cover the
+  # same area either way. Opaque, it clears AA on all five.
+  #
+  # The measured figure is still a best case — the badge floats over whatever
+  # has scrolled past, and no scheme can grade against that — but the ground is
+  # the right reference, and it is the one the reader controls.
+  Badge Color: accent.base
+
+# `Tab Color` is deliberately not set. iTerm only honours it when a profile
+# ticks "Use tab color", and a scheme that silently repaints the tab bar on
+# import is a scheme people have to undo by hand.
+
+# -----------------------------------------------------------------------------
+# The contrast contract
+#
+# Same shape as src/a11y.yml and src/slack.yml, and the thresholds come from
+# a11y.yml so all three products are held to one definition of AA. `on`
+# composites a translucent background over the ground before measuring, which
+# is what a reader actually sees.
+# -----------------------------------------------------------------------------
+contrast:
+  - { fg: Foreground Color, bg: Background Color, level: text, as: terminal text }
+  - { fg: Bold Color, bg: Background Color, level: text, as: bold text }
+  - { fg: Link Color, bg: Background Color, level: text, as: links }
+  - {
+      fg: Selected Text Color,
+      bg: Selection Color,
+      on: Background Color,
+      level: text,
+      as: text inside a selection,
+    }
+  - {
+      fg: Cursor Text Color,
+      bg: Cursor Color,
+      level: text,
+      as: text under the block cursor,
+    }
+  - {
+      fg: Cursor Color,
+      bg: Background Color,
+      level: nonText,
+      as: the cursor against the ground,
+    }
+
+  # The fourteen ANSI colours that are held to full AA on every palette.
+  #
+  # The two corners are handled below. Everything between them has to be
+  # readable, because a CLI tool that prints in colour 3 is printing
+  # information, not decoration.
+  - { fg: Ansi 1 Color, bg: Background Color, level: text, as: ansi red }
+  - { fg: Ansi 2 Color, bg: Background Color, level: text, as: ansi green }
+  - { fg: Ansi 3 Color, bg: Background Color, level: text, as: ansi yellow }
+  - { fg: Ansi 4 Color, bg: Background Color, level: text, as: ansi blue }
+  - { fg: Ansi 5 Color, bg: Background Color, level: text, as: ansi magenta }
+  - { fg: Ansi 6 Color, bg: Background Color, level: text, as: ansi cyan }
+  - { fg: Ansi 7 Color, bg: Background Color, level: text, as: ansi white }
+  - { fg: Ansi 8 Color, bg: Background Color, level: text, as: ansi bright black }
+  - { fg: Ansi 9 Color, bg: Background Color, level: text, as: ansi bright red }
+  - { fg: Ansi 10 Color, bg: Background Color, level: text, as: ansi bright green }
+  - { fg: Ansi 11 Color, bg: Background Color, level: text, as: ansi bright yellow }
+  - { fg: Ansi 12 Color, bg: Background Color, level: text, as: ansi bright blue }
+  - { fg: Ansi 13 Color, bg: Background Color, level: text, as: ansi bright magenta }
+  - { fg: Ansi 14 Color, bg: Background Color, level: text, as: ansi bright cyan }
+
+  # The two corners of the cube, held to the documented `dim` floor in
+  # a11y.yml rather than to AA.
+  #
+  # Exactly one of these is the near corner on any given palette — black on the
+  # dark grounds, bright white on the light ones — and the other clears AA by a
+  # wide margin. Which is which is a property of the ground, not of the slot,
+  # so both carry the floor and the build prints the measured ratio for each.
+  # Nothing is hidden by this: the near corner reads around 2.6:1 and the far
+  # one around 17:1, and both numbers are in the table.
+  #
+  # The floor exists because this corner cannot reach AA without ceasing to be
+  # the colour it names. Pushing ANSI black to 4.5:1 on a dark ground turns it
+  # into a mid grey and leaves the ramp without a black at all. The reasoning
+  # is in a11y.yml and must not be reused to excuse ordinary failures.
+  - { fg: Ansi 0 Color, bg: Background Color, level: dim, as: ansi black }
+  - { fg: Ansi 15 Color, bg: Background Color, level: dim, as: ansi bright white }
+
+  - { fg: Badge Color, bg: Background Color, level: text, as: badge text }
+
+# Nothing here. The one slot that was going to need an advisory — the badge —
+# turned out to be fixable instead; see the note where it is declared. An
+# advisory is for a threshold that costs more to meet than it buys, and this
+# one cost nothing.
+advisory: []

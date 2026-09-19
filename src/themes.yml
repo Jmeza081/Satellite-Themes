@@ -11,36 +11,56 @@
 #   uiTheme  vs-dark | vs | hc-black | hc-light
 #   tokens   palette file, relative to src/
 #   output   destination, relative to the repository root
+#   slack    optional — also export this palette as a Slack sidebar theme
+#   iterm    optional — also export this palette as an iTerm2 colour scheme
 #
 # Phase 4 adds the light and high-contrast variants by pointing new entries at
 # new token files. The ui.yml and syntax.yml partials are shared unchanged.
+#
+# `slack` is set on the two dark variants only. A Slack custom theme colours
+# the sidebar while the message pane follows Slack's own Light/Dark setting, so
+# a light or high-contrast column would be paired with whichever pane the
+# reader has set and could not be held to the contrast contract. See
+# src/slack.yml.
+#
+# `iterm` is set on all five. A terminal scheme sets its own ground, so unlike
+# a Slack sidebar it cannot end up paired with a surface it was not graded
+# against, and the light and high-contrast palettes are as valid there as the
+# dark ones. See src/iterm.yml.
 
 - id: satellite
   label: Satellite
   uiTheme: vs-dark
   tokens: tokens.yml
   output: theme/satellite.json
+  slack: slack/satellite.txt
+  iterm: iterm/satellite.itermcolors
 
 - id: satellite-nebula
   label: Satellite Nebula
   uiTheme: vs-dark
   tokens: tokens-nebula.yml
   output: theme/satellite-nebula.json
+  slack: slack/satellite-nebula.txt
+  iterm: iterm/satellite-nebula.itermcolors
 
 - id: satellite-daybreak
   label: Satellite Daybreak
   uiTheme: vs
   tokens: tokens-daybreak.yml
   output: theme/satellite-daybreak.json
+  iterm: iterm/satellite-daybreak.itermcolors
 
 - id: satellite-orbit-hc
   label: Satellite High Contrast
   uiTheme: hc-black
   tokens: tokens-orbit-hc.yml
   output: theme/satellite-orbit-hc.json
+  iterm: iterm/satellite-orbit-hc.itermcolors
 
 - id: satellite-daybreak-hc
   label: Satellite Daybreak High Contrast
   uiTheme: hc-light
   tokens: tokens-daybreak-hc.yml
   output: theme/satellite-daybreak-hc.json
+  iterm: iterm/satellite-daybreak-hc.itermcolors

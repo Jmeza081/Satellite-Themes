@@ -7,6 +7,12 @@ scripts/**
 data/**
 node_modules/**
 
+# The Slack sidebar themes and the iTerm2 schemes are separate products built
+# from the same palettes. They install by pasting a string into Slack and by
+# importing a colour preset, not from the VSIX.
+slack/**
+iterm/**
+
 # Design sources and the README artwork stay in the repository. vsce rewrites
 # relative image links in the README to raw repository URLs at package time,
 # so the banners do not need to be inside the .vsix — only the icon does.

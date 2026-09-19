@@ -1,0 +1,186 @@
+# =============================================================================
+# Satellite — Slack sidebar theme map
+# =============================================================================
+#
+# Slack's custom themes are eight colours, pasted in as one comma-separated
+# string. That is the whole surface area: there is no stylesheet, no syntax
+# layer, and nothing that corresponds to the editor. A Slack theme dresses the
+# left-hand column and nothing else.
+#
+# So this file is not a port of the VS Code theme. It is a projection of the
+# palette onto eight slots, and the interesting work is deciding which token
+# belongs in each one. Every value below is a token reference resolved against
+# the same tokens-*.yml the VS Code build uses, through the same resolver — so
+# a palette change moves both products at once, and literal hex is rejected
+# here exactly as it is in ui.yml.
+#
+# -----------------------------------------------------------------------------
+# WHAT SLACK ACTUALLY THEMES
+# -----------------------------------------------------------------------------
+# Two things are worth knowing before reading the map, because both of them
+# constrain it:
+#
+#   · A custom theme colours the sidebar. The message pane follows Slack's own
+#     Appearance setting — Light, Dark, or System — and no theme string can
+#     change it. To get a dark Satellite, a reader sets Appearance to Dark and
+#     then applies the theme. This is documented in slack/README.md, because it
+#     is the single most common reason a dark sidebar theme "doesn't work".
+#
+#   · Slack draws the mention badge's count in white, and dims read channels
+#     below the declared Text Color. Neither is configurable. Both are why the
+#     slots below are assigned against measured contrast rather than by eye;
+#     scripts/slack.js re-measures all of it on every build.
+#
+# -----------------------------------------------------------------------------
+# THE ORDER IS THE FORMAT
+# -----------------------------------------------------------------------------
+# `order` is load-bearing. The paste string is positional — Slack reads the
+# eight values by index and never sees these names — so reordering this list
+# silently produces a valid-looking theme with the colours in the wrong slots.
+# The names are here for the humans and for slack/README.md; the sequence is
+# the contract.
+# =============================================================================
+
+order:
+  - columnBg
+  - menuBgHover
+  - activeItem
+  - activeItemText
+  - hoverItem
+  - textColor
+  - activePresence
+  - mentionBadge
+
+# -----------------------------------------------------------------------------
+# Slot labels, as Slack's own theme builder writes them. Used for the tables in
+# slack/README.md and the build report, so the two agree with what a reader
+# sees in Preferences → Themes.
+# -----------------------------------------------------------------------------
+labels:
+  columnBg: Column BG
+  menuBgHover: Menu BG Hover
+  activeItem: Active Item
+  activeItemText: Active Item Text
+  hoverItem: Hover Item
+  textColor: Text Color
+  activePresence: Active Presence
+  mentionBadge: Mention Badge
+
+# -----------------------------------------------------------------------------
+# The map
+# -----------------------------------------------------------------------------
+slots:
+  # The sidebar ground. Same token as sideBar.background, so the Slack column
+  # and the VS Code side bar are the same colour to the byte — which is the
+  # point of doing this from the palette rather than from a screenshot.
+  columnBg: surface.deep
+
+  # The workspace-name menu and search field when hovered. Taking the overlay
+  # rather than the raised surface puts it one step above the channel hover
+  # below, so the two hover states do not read as the same gesture.
+  menuBgHover: surface.overlay
+
+  # The channel you are currently in.
+  #
+  # This is the one slot where the VS Code analogue is the wrong answer. In the
+  # editor the selected row is surface.overlay, which measures 1.5:1 against
+  # the ground — legible there because VS Code also draws a focus outline and
+  # because the selection follows a click the reader just made. Slack draws no
+  # outline, and the active channel is the only "you are here" affordance in
+  # the column; at 1.5:1 it disappears.
+  #
+  # So the accent takes it, at 7:1 or better against the ground on both dark
+  # palettes. This is also the colour the theme is recognised by — the cursor,
+  # the focus ring and the active tab indicator are all accent.base — which
+  # makes the active channel the thing a screenshot is identified from.
+  activeItem: accent.base
+
+  # accent.base is a bright fill, so its text has to be dark. text.onFill is
+  # the token that exists for exactly this case; see the note where it is
+  # declared. Measures 7:1 and better, comfortably past AA.
+  activeItemText: text.onFill
+
+  # Channel rows under the pointer. The raised surface, matching
+  # list.hoverBackground. Deliberately quiet: hover is feedback, not a state.
+  hoverItem: surface.raised
+
+  # Channel names at rest. text.muted, matching sideBar.foreground — the same
+  # decision the VS Code theme makes, for the same reason. Slack brightens
+  # unread channels and dims read ones from this value, so leaving headroom
+  # above and below it is what keeps both ends readable; text.default would
+  # spend the headroom at the top and make every channel shout.
+  textColor: text.muted
+
+  # The green dot. status.success, at 9.5:1 and 11.4:1 against the ground.
+  activePresence: status.success
+
+  # The unread-mention badge, and the one slot with a hard external constraint:
+  # Slack draws the count in white and offers no way to change it. That rules
+  # out status.error, which is the obvious pick and which holds white at only
+  # 3.2:1 — the badge would be loud and its number unreadable.
+  #
+  # accent.solid is the token built to hold light text as a fill, and it is
+  # already badge.background in ui.yml, so this is both the accessible answer
+  # and the faithful one. It holds white at 5.3:1 on Satellite and 6.4:1 on
+  # Nebula.
+  #
+  # The cost is recorded rather than hidden: the badge fill itself sits at
+  # 2.7:1 against the column, under the 3:1 non-text floor. scripts/slack.js
+  # reports that figure on every build instead of exempting it. It is accepted
+  # because the badge's meaning is carried by its numeral, which is at 15:1 or
+  # better, and the alternative trades a readable number for a visible pill.
+  mentionBadge: accent.solid
+
+# -----------------------------------------------------------------------------
+# The contrast contract
+#
+# Declared here rather than buried in scripts/slack.js, for the same reason
+# a11y.yml is a separate file: the requirement should be reviewable without
+# reading the code that enforces it. Thresholds are not repeated — they are
+# read from a11y.yml, so Slack and VS Code are held to one definition of AA.
+#
+# Pairs take the shape a11y.yml already uses — `{ fg, bg, level, as }` — so the
+# contracts read the same way whichever product they belong to. `fg` and `bg`
+# are slot names, or a literal hex for a colour Slack draws that the theme
+# cannot set. `level` names a threshold in a11y.yml: `text` is SC 1.4.3, and
+# `nonText` is SC 1.4.11, for shapes that carry meaning without text.
+# -----------------------------------------------------------------------------
+contrast:
+  - { fg: textColor, bg: columnBg, level: text, as: channel names at rest }
+  - { fg: textColor, bg: hoverItem, level: text, as: channel names under the pointer }
+  - { fg: textColor, bg: menuBgHover, level: text, as: workspace menu and search }
+  - { fg: activeItemText, bg: activeItem, level: text, as: the channel you are in }
+  - {
+      fg: "#FFFFFF",
+      bg: mentionBadge,
+      level: text,
+      as: the mention count Slack always draws white,
+    }
+  - {
+      fg: activeItem,
+      bg: columnBg,
+      level: nonText,
+      as: the active channel against the column,
+    }
+  - {
+      fg: activePresence,
+      bg: columnBg,
+      level: nonText,
+      as: the online dot against the column,
+    }
+
+# -----------------------------------------------------------------------------
+# Measured and reported on every build, but not gated. `because` is required:
+# an advisory without a reason is a hidden failure, and the reason has to be
+# that meeting the threshold would cost more than it buys — not that it was
+# inconvenient.
+# -----------------------------------------------------------------------------
+advisory:
+  - fg: mentionBadge
+    bg: columnBg
+    level: nonText
+    as: the mention badge fill against the column
+    because: >-
+      It is the one fill dark enough to hold Slack's white count at AA. The
+      numeral carries the meaning and clears 15:1; a lighter pill would reverse
+      that.

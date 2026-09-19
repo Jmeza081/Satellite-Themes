@@ -133,6 +133,111 @@ contrast. The fixtures verify how the theme handles a scope, not that a grammar
 emits it; scope names are taken from each language's published grammar and the
 sources are listed at the top of that file.
 
+## Satellite for Slack
+
+The two dark palettes are also published as Slack sidebar themes, built from the
+same `src/tokens-*.yml` through the same resolver — so the Slack column and the
+VS Code side bar are the same colour to the byte, and a palette change moves
+both.
+
+<p align="center">
+  <img src="./assets/slack-satellite-nebula.png" alt="Satellite Nebula as a Slack sidebar" width="270">
+  &nbsp;&nbsp;&nbsp;
+  <img src="./assets/slack-satellite.png" alt="Satellite as a Slack sidebar" width="270">
+</p>
+
+**Satellite Nebula**
+
+```
+#0F0719,#322B4D,#FF7C4C,#0F0719,#24203E,#BAB8CC,#00E18E,#A32605
+```
+
+**Satellite**
+
+```
+#0E191F,#2A3943,#2DB4B2,#0E191F,#233039,#ACBAC0,#50D492,#006C6B
+```
+
+Open **Preferences → Themes**, set **Appearance** to **Dark**, then paste the
+string into **Create a custom theme**. The Appearance step is not optional and
+is not part of the string: a Slack custom theme colours the sidebar only, and
+the message pane follows that setting — skipping it leaves a dark column beside
+a white pane, which is the usual reason a dark Slack theme looks broken.
+
+To share one, paste the string into any channel or DM and send it. Slack
+recognises the format, renders the swatches inline, and gives everyone who can
+see the message a **Switch sidebar theme** button — nothing is installed and no
+app is authorised.
+
+Eight colours is the entire surface area Slack exposes, so the work is in which
+token goes in which slot. The reasoning is written next to each value in
+[`src/slack.yml`](./src/slack.yml), and the same contrast contract applies:
+`yarn slack:strict` re-measures every text and non-text pair against the
+thresholds in `src/a11y.yml` and fails the build on a regression. Full tables
+are in [`slack/README.md`](./slack/README.md), which is generated so the strings
+in the prose cannot drift from the build.
+
+Two slots depart from the editor mapping, and both look like mistakes until you
+try the alternative:
+
+- **The active channel takes the accent**, where VS Code's selected row takes a
+  raised surface. VS Code draws a focus outline and Slack does not, so here the
+  colour carries the whole affordance: `surface.overlay` measures 1.5:1 against
+  the column, the accent measures 7:1.
+- **The mention badge takes the deep accent, not the error red.** Slack always
+  draws the count in white with no way to change it, and the error red holds
+  white at 3.2:1 — a loud pill with an unreadable number.
+
+## Satellite for iTerm2
+
+All five palettes as iTerm2 colour schemes, in [`iterm/`](./iterm). The sixteen
+ANSI colours are the same values `src/ui.yml` gives VS Code's integrated
+terminal, so a shell prints identically in both.
+
+<p align="center">
+  <img src="./assets/iterm-satellite-nebula.png" alt="Satellite Nebula in iTerm2" width="820">
+</p>
+
+| Scheme | Ground | |
+| --- | --- | --- |
+| **Satellite Nebula** | `#0F0719` | [`satellite-nebula.itermcolors`](./iterm/satellite-nebula.itermcolors) |
+| **Satellite** | `#0E191F` | [`satellite.itermcolors`](./iterm/satellite.itermcolors) |
+| **Satellite Daybreak** | `#E9EFF3` | [`satellite-daybreak.itermcolors`](./iterm/satellite-daybreak.itermcolors) |
+| **Satellite High Contrast** | `#010406` | [`satellite-orbit-hc.itermcolors`](./iterm/satellite-orbit-hc.itermcolors) |
+| **Satellite Daybreak High Contrast** | `#F7F9FA` | [`satellite-daybreak-hc.itermcolors`](./iterm/satellite-daybreak-hc.itermcolors) |
+
+Double-click the file to import it, then pick it from **Settings → Profiles →
+Colors → Color Presets…**. Presets apply per profile, so a profile you use for
+something else keeps its own colours. Sharing is just sending the file.
+
+All five export here, where only the two dark palettes export to Slack. The
+difference is that a terminal scheme sets its own ground: it cannot end up
+paired with a surface it was not graded against, so the light and
+high-contrast variants are as valid in a terminal as the dark ones.
+
+The map is [`src/iterm.yml`](./src/iterm.yml), and `yarn iterm:strict` runs 23
+contrast checks per scheme against the thresholds in `src/a11y.yml`. Full
+tables and previews for each are in [`iterm/README.md`](./iterm/README.md).
+Three decisions worth calling out:
+
+- **Bold text takes the body colour, not a brighter one.** The obvious value is
+  the bright-white corner of the ANSI cube, which lifts bold on a dark ground —
+  and on Daybreak makes bold render *paler* than body text. Bold is carried by
+  weight.
+- **The badge is opaque.** iTerm's own badge is translucent and the first draft
+  followed it, measuring between 2.4:1 and 4.5:1 depending on the palette. The
+  alpha bought nothing — badge glyphs cover the same area either way — so it
+  went, and the slot now clears AA everywhere.
+- **`Tab Color` is deliberately unset**, because iTerm only honours it when a
+  profile ticks *Use tab color*, and a scheme that silently repaints the tab bar
+  is one people have to undo by hand.
+
+One documented shortfall, inherited from the palettes rather than introduced
+here: the corner of the ANSI cube nearest the ground — black on the dark
+schemes, bright white on the light ones — sits below AA at the `dim` floor
+described under [Accessibility](#accessibility). It cannot reach 4.5:1 without
+ceasing to be the colour it names.
+
 ## Installing without the Marketplace
 
 ### From a `.vsix` — nothing to clone
@@ -199,8 +304,17 @@ src/syntax.yml           TextMate syntax rules
 src/semantic.yml         semantic token colours
 src/a11y.yml             the accessibility contract that `yarn verify` enforces
 src/fixtures.yml         per-language scope expectations `yarn fixtures` checks
-src/themes.yml           which variants to build
+src/slack.yml            the Slack sidebar slot map and its contrast contract
+src/iterm.yml            the iTerm2 slot map and its contrast contract
+src/themes.yml           which variants to build, and where else they export
 ```
+
+The Slack and iTerm exports are generated into `slack/` and `iterm/`, which
+*are* committed — the paste strings and the `.itermcolors` files are the
+product, so they need to be usable without a build. Both go through
+`scripts/export.js`, which holds the parts they share: reading the thresholds
+out of `a11y.yml`, measuring a declared pair list, and refusing to let a
+generated file or a hand-quoted README value drift from `src/`.
 
 Colours are authored in OKLCH — `oklch(<lightness> <chroma> <hue>)` — and
 converted to hex at build time, with chroma reduced automatically when a colour
@@ -222,6 +336,12 @@ yarn fixtures    # per-language scope coverage
 yarn brand       # regenerate assets/*.svg from the palettes
 yarn assets      # re-render assets/*.svg to PNG
 yarn screenshots # recapture the README editor mock-ups, one per theme
+yarn slack       # rebuild slack/ and report its contrast
+yarn slack:check # assert the committed slack/ files match src/
+yarn slack:preview # re-render the Slack sidebar mock-ups
+yarn iterm       # rebuild iterm/ and report its contrast
+yarn iterm:check # assert the committed iterm/ files match src/
+yarn iterm:preview # re-render the terminal mock-ups
 yarn package     # build an installable .vsix into bin/
 yarn test        # unit tests, then all of the above
 ```
